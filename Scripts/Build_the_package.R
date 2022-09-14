@@ -2,12 +2,8 @@
 usethis::use_description()
 usethis::use_namespace()
 
-# this will setup the folders needed for the data and raw-data
-usethis::use_data_raw()
-#usethis::use_data(data, overwrite = TRUE)# This line should be included in an RScript to generate the data; a second script (data.R) has to be created, 
-# executed and kept in data-raw; a new directory named data with the required files is created
-
 # Create R directory
+# Go to the R package main directory
 base::dir.create("R")
 
 # creates Package-level documentation so you can run ?nameofpackage
@@ -16,6 +12,7 @@ usethis::use_package_doc()
 # created README.Rmd for Github landing page
 # an .Rbuildignore file gets created
 usethis::use_readme_rmd()
+
 # Creating an R package
 #https://sahirbhatnagar.com/rpkg/
 
@@ -26,14 +23,16 @@ usethis::use_mit_license("Sahir Bhatnagar")
 usethis::use_news_md()
 
 # setup continuous integration via travis-ci
-usethis::use_travis()
+#usethis::use_travis()#Deprecated
+usethis::use_github_actions()
 
 # sets up testing infrastructure
 usethis::use_testthat()
 
 # this will setup the folders needed for the data and raw-data
 usethis::use_data_raw()
-
+#usethis::use_data(data, overwrite = TRUE)# This line should be included in an DATASET.R, which has to be executed and kept in data-raw.
+# A second script (data.R) has to be created in R/data.R
 
 # this will generate documentation for your functions
 pacman::p_load(sinew)
