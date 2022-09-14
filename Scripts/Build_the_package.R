@@ -31,7 +31,7 @@ usethis::use_testthat()
 
 # this will setup the folders needed for the data and raw-data
 usethis::use_data_raw()
-#usethis::use_data(data, overwrite = TRUE)# This line should be included in an DATASET.R, which has to be executed and kept in data-raw.
+#usethis::use_data(data, overwrite = TRUE)# This line should be included in an DATASET.R, which has to be executed and kept in data-raw: source("./data-raw/DATASET.R")
 # A second script (data.R) has to be created in R/data.R
 
 # this will generate documentation for your functions

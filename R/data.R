@@ -58,6 +58,7 @@
 #' cc.TILs
 "cc.TILs"
 
+
 #' cc.LCMV Data
 #'
 #' A dataset containing the connected components of each modulon.
@@ -80,6 +81,7 @@
 #' @examples
 #' Modulon.Cores.TILs
 "Modulon.Cores.TILs"
+
 
 #' Modulon.Cores.LCMV Data
 #'
