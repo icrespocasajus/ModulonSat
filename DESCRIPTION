@@ -1,0 +1,18 @@
+Package: ModulonSat
+Title: Modulon Regulatory Core Satellite Transcription Factors Identification
+Version: 1.0
+Authors@R: 
+    person("Isaac", "Crespo", , "isaaccrespo@hotmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-3151-3901"))
+Description: ModulonCore finds all connected components within the modulon regulatory network.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)
+LazyData: true
