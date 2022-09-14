@@ -14,7 +14,7 @@ A character vector of 11 elements.
 Modulon.Cores.LCMV
 }
 \description{
-A dataset containing the connected components of each modulon.
+A dataset containing the names of the modulon regulatory cores.
 }
 \examples{
 Modulon.Cores.LCMV

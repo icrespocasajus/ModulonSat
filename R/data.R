@@ -72,7 +72,7 @@
 
 #' Modulon.Cores.TILs Data
 #'
-#' A dataset containing the connected the names of the modulon regulatory cores.
+#' A dataset containing the names of the modulon regulatory cores.
 
 #'
 #' @format A character vector of 5 elements.
@@ -83,7 +83,7 @@
 
 #' Modulon.Cores.LCMV Data
 #'
-#' A dataset containing the connected components of each modulon.
+#' A dataset containing the names of the modulon regulatory cores.
 
 #'
 #' @format A character vector of 11 elements.
@@ -91,3 +91,24 @@
 #' @examples
 #' Modulon.Cores.LCMV
 "Modulon.Cores.LCMV"
+
+
+#' DA.TILs Data
+#'
+#' A dataset containing the OPLS-DA analysis score (WeightStarMN) normalized.
+
+#'
+#' @format A list of 5 elements.
+#' @examples
+#' DA.TILs
+"DA.TILs"
+
+#' DA.LCMV Data
+#'
+#' A dataset containing the OPLS-DA analysis score (WeightStarMN) normalized.
+
+#'
+#' @format A list of 6 elements.
+#' @examples
+#' DA.LCMV
+"DA.LCMV"

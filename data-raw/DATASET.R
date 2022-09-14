@@ -24,3 +24,12 @@ usethis::use_data(cc.LCMV, overwrite = TRUE)
 Modulon.Cores.LCMV=readRDS(file="./Modulon.Cores.LCMV.Rds")
 usethis::use_data(Modulon.Cores.LCMV, overwrite = TRUE)
 
+
+discriminancy.LCMV = readRDS(file = "./REGULON&RNA.LCMV.metaAUC.all_subpopulations_Vs._background.Results.OPLS.Rds")
+DA.LCMV = lapply(discriminancy.LCMV,function(x){tv=grep('_REGULON',rownames(x));tmp.df=as.data.frame(x[tv,'Weights']);rownames(tmp.df)=gsub('_REGULON','',rownames(x)[tv]);colnames(tmp.df)='Weights';return(tmp.df)})
+usethis::use_data(DA.LCMV, overwrite = TRUE)
+
+
+discriminancy.TILs = readRDS(file = "./REGULON&RNA.TILs.metaAUC.all_subpopulations_Vs._background.Results.OPLS.Rds")
+DA.TILs = lapply(discriminancy.TILs,function(x){tv=grep('_REGULON',rownames(x));tmp.df=as.data.frame(x[tv,'Weights']);rownames(tmp.df)=gsub('_REGULON','',rownames(x)[tv]);colnames(tmp.df)='Weights';return(tmp.df)})
+usethis::use_data(DA.TILs, overwrite = TRUE)

@@ -34,12 +34,12 @@ usethis::use_data_raw()
 #usethis::use_data(data, overwrite = TRUE)# This line should be included in an DATASET.R, which has to be executed and kept in data-raw: source("./data-raw/DATASET.R")
 # A second script (data.R) has to be created in R/data.R
 
-# this will generate documentation for your functions
-pacman::p_load(sinew)
-sinew::makeOxyFile("R/ModulonCore_functions.R")
+# This will generate a scaffold for the functions file and documentation
+pacman::p_load(sinew)# This can be skipped; ModulonSat_functions.R can be manually created and placed in R/ModulonSat_functions.R
+sinew::makeOxyFile("R/ModulonSat_functions.R")
 
 # See available functions
-pacman::p_functions("ModulonCore")
+pacman::p_functions("ModulonSat")
 
 devtools::check()# WARNING! Be aware that using check from RStudio build panel is going to wipe out the doc folder; vignettes may stop working properly
 

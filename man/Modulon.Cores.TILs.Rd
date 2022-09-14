@@ -14,7 +14,7 @@ A character vector of 5 elements.
 Modulon.Cores.TILs
 }
 \description{
-A dataset containing the connected the names of the modulon regulatory cores.
+A dataset containing the names of the modulon regulatory cores.
 }
 \examples{
 Modulon.Cores.TILs
