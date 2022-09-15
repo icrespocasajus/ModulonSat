@@ -16,7 +16,7 @@ jaccard(a, b)
 Jaccard distance calculated as the ratio between the intersection and the union of the two vectors.
 }
 \description{
-Calculate Jaccard distance between two vectors
+Calculate Jaccard distance between two vectors.
 }
 \details{
 DETAILS

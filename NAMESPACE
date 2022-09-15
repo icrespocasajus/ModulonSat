@@ -3,4 +3,5 @@
 export(jaccard)
 export(range01)
 export(redundancy)
+export(redundancy.wrt)
 export(strsplit2)

@@ -1,7 +1,7 @@
 suppressMessages(require(igraph))
 
 #' @title Jaccard Distance
-#' @description Calculate Jaccard distance between two vectors
+#' @description Calculate Jaccard distance between two vectors.
 #' @param a A vector.
 #' #' @param a A vector.
 #' @param b A vector.
@@ -20,8 +20,9 @@ jaccard <- function(a, b) {
   union = length(a) + length(b) - intersection
   return (intersection/union)
 }
-#' @title Regulon Redundancy
-#' Calculate redundancy between two regulons
+
+#' @title Redundancy
+#' Calculate redundancy between two vectors
 #' @param a A vector
 #' @param b A vector
 #' @return Redundancy calculated as the ratio between the intersection and the minimum length of the two vectors.
@@ -38,6 +39,27 @@ redundancy <- function(a, b) {
   intersection = length(intersect(a, b))
   min = min(length(a),length(b))
   return (intersection/min)
+}
+
+
+#' @title Redundancy with respect to a Reference
+#' Calculate redundancy of a vector with respect to another vector.
+#' @param a A query vector
+#' @param b A reference vector
+#' @return Redundancy calculated as the ratio between the intersection and the length of the reference vector
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' redundancy(c('A','B','C'),c('A','B','C','D','E'))
+#'  }
+#' }
+#' @rdname redundancy.wrt
+#' @export 
+redundancy.wrt <- function(a, b) {
+  intersection = length(intersect(a, b))
+  ref = length(b)
+  return (intersection/ref)
 }
 
 

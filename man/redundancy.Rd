@@ -2,8 +2,8 @@
 % Please edit documentation in R/ModulonSat_functions.R
 \name{redundancy}
 \alias{redundancy}
-\title{Regulon Redundancy
-Calculate redundancy between two regulons}
+\title{Redundancy
+Calculate redundancy between two vectors}
 \usage{
 redundancy(a, b)
 }
@@ -16,8 +16,8 @@ redundancy(a, b)
 Redundancy calculated as the ratio between the intersection and the minimum length of the two vectors.
 }
 \description{
-Regulon Redundancy
-Calculate redundancy between two regulons
+Redundancy
+Calculate redundancy between two vectors
 }
 \details{
 DETAILS
