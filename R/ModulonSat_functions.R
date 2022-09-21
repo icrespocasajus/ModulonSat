@@ -62,6 +62,25 @@ redundancy.wrt <- function(a, b) {
   return (intersection/ref)
 }
 
+#' @title Overlap between two vectors
+#' Calculate the number of common elements between two vectors
+#' @param a A vector
+#' @param b A vector
+#' @return The integer with the number of common elements
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' overlap(c('A','B','C'),c('A','B','C','D','E'))
+#'  }
+#' }
+#' @rdname overlap
+#' @export 
+overlap <- function(a, b) {
+  intersection = length(intersect(a, b))
+  return (intersection)
+}
+
 
 #' @title Range between 0 and 1
 #' @description Normalize absolute values of a numeric vector
@@ -114,3 +133,212 @@ strsplit2 = function (x, split, ...)
 }
 
 
+
+
+#' @title Target Analysis
+#' @description Find common targets between a given modulon connected component and modulon constituent elements out of the connected component.
+#' @param net A dataframe with a network encoded in 3 columns: 'Source','Interaction','Target'.
+#' @param modulons A list with as many elements as modulons/clusters containing the constituent elements.
+#' @param cc Connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @return List of the modulon constituent elements sharing targets with a given modulon connected component.
+#' @details This function is searches for the modulon constituent elements sharing targets with a given modulon connected component, for each connected component and modulon in a given list of connected components split by their source modulon.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis(net = network.TILs,
+#' mod = modulons.TILs,
+#' cc = cc.TILs
+#' )
+#' }
+#' }
+#' @rdname target.analysis
+#' @export 
+target.analysis = function(net,modulons,cc){
+  network = net
+  modulons = modulons
+  cc = cc
+  regulons = split(network$Target,network$Source)
+  target.analysis.results = list()
+  for(i in 1:length(names(cc))){
+    modulon.tmp = names(cc)[i]
+    for(j in 1:length(names(cc[[modulon.tmp]]))){
+      query.cc = names(cc[[modulon.tmp]])[j]
+      core.tmp = cc[[modulon.tmp]][[query.cc]]
+      
+      core.targets.tmp = as.character(unlist(regulons[core.tmp]))
+      regulons.subset.core = regulons[core.tmp]
+      regulons.subset.no.core = regulons[setdiff(modulons[[modulon.tmp]],core.tmp)]
+      
+      no.core.redundancy.wrt.core = lapply(regulons.subset.no.core,function(x){
+        tf.targets.tmp = as.character(unlist(x))
+        redundancy.tmp = redundancy.wrt(tf.targets.tmp,core.targets.tmp)
+        return(redundancy.tmp)
+      })
+      no.core.redundancy.df = data.frame(TF=names(as.data.frame(no.core.redundancy.wrt.core)),Redundancy = as.numeric(as.character(as.data.frame(no.core.redundancy.wrt.core))))
+      rownames(no.core.redundancy.df)=no.core.redundancy.df$TF
+      no.core.redundancy.df = no.core.redundancy.df[order(no.core.redundancy.df$Redundancy,decreasing = T),]
+      
+      no.core.similarity.wrt.core = lapply(regulons.subset.no.core,function(x){
+        tf.targets.tmp = as.character(unlist(x))
+        redundancy.tmp = jaccard(tf.targets.tmp,core.targets.tmp)
+        return(redundancy.tmp)
+      })
+      no.core.similarity.df = data.frame(TF=names(as.data.frame(no.core.similarity.wrt.core)),Similarity = as.numeric(as.character(as.data.frame(no.core.similarity.wrt.core))))
+      rownames(no.core.similarity.df)=no.core.similarity.df$TF
+      no.core.similarity.df = no.core.similarity.df[order(no.core.similarity.df$Similarity,decreasing = T),]
+      
+      no.core.overlap.wrt.core = lapply(regulons.subset.no.core,function(x){
+        tf.targets.tmp = as.character(unlist(x))
+        overlap.tmp = overlap(tf.targets.tmp,core.targets.tmp)
+        return(overlap.tmp)
+      })
+      no.core.overlap.df = data.frame(TF=names(as.data.frame(no.core.overlap.wrt.core)),Overlap = as.numeric(as.character(as.data.frame(no.core.overlap.wrt.core))))
+      rownames(no.core.overlap.df)=no.core.overlap.df$TF
+      no.core.overlap.df = no.core.overlap.df[order(no.core.overlap.df$Overlap,decreasing = T),]
+      
+      target.analysis.results[[paste(modulon.tmp,query.cc,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
+      
+    }  
+    
+  }
+  return(target.analysis.results)
+}
+
+
+
+#' @title Target Analysis manual query
+#' @description Find common targets between a given modulon connected component and modulon constituent elements out of the connected component; the specific modulon and connected component have to be specified.
+#' @param net A dataframe with a network encoded in 3 columns: 'Source','Interaction','Target'.
+#' @param modulons A list with as many elements as modulons/clusters containing the constituent elements.
+#' @param cc Connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @param query.mod Name of the query modulon
+#' @param query.cc Name of the connected component
+#' @return List with as many elements as the modulon constituent elements out of a given modulon connected component. Each element includes a dataframe with 4 columns: TF, Redundancy, Similarity and Overlap
+#' @details This function is searches for the modulon constituent elements sharing targets with a given modulon connected component.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis.manual.query(net = network.TILs,
+#' mod = modulons.TILs,
+#' cc = cc.TILs,
+#' query.mod = '3',
+#' query.cc= 'cc.3')
+#' }
+#' }
+#' @rdname target.analysis.manual.query
+#' @export 
+target.analysis.manual.query = function(net,modulon,cc,query.mod,query.cc){
+  network = net
+  modulons = modulon
+  cc = cc
+  modulon.tmp = query.mod
+  core.tmp = cc[[modulon.tmp]][[query.cc]]
+  
+  regulons = split(network$Target,network$Source)
+  core.targets.tmp = as.character(unlist(regulons[core.tmp]))
+  regulons.subset.core = regulons[core.tmp]
+  regulons.subset.no.core = regulons[setdiff(modulons[[modulon.tmp]],core.tmp)]
+  
+  no.core.redundancy.wrt.core = lapply(regulons.subset.no.core,function(x){
+    tf.targets.tmp = as.character(unlist(x))
+    redundancy.tmp = redundancy.wrt(tf.targets.tmp,core.targets.tmp)
+    return(redundancy.tmp)
+  })
+  no.core.redundancy.df = data.frame(TF=names(as.data.frame(no.core.redundancy.wrt.core)),Redundancy = as.numeric(as.character(as.data.frame(no.core.redundancy.wrt.core))))
+  rownames(no.core.redundancy.df)=no.core.redundancy.df$TF
+  no.core.redundancy.df = no.core.redundancy.df[order(no.core.redundancy.df$Redundancy,decreasing = T),]
+  
+  no.core.similarity.wrt.core = lapply(regulons.subset.no.core,function(x){
+    tf.targets.tmp = as.character(unlist(x))
+    redundancy.tmp = jaccard(tf.targets.tmp,core.targets.tmp)
+    return(redundancy.tmp)
+  })
+  no.core.similarity.df = data.frame(TF=names(as.data.frame(no.core.similarity.wrt.core)),Similarity = as.numeric(as.character(as.data.frame(no.core.similarity.wrt.core))))
+  rownames(no.core.similarity.df)=no.core.similarity.df$TF
+  no.core.similarity.df = no.core.similarity.df[order(no.core.similarity.df$Similarity,decreasing = T),]
+  
+  no.core.overlap.wrt.core = lapply(regulons.subset.no.core,function(x){
+    tf.targets.tmp = as.character(unlist(x))
+    overlap.tmp = overlap(tf.targets.tmp,core.targets.tmp)
+    return(overlap.tmp)
+  })
+  no.core.overlap.df = data.frame(TF=names(as.data.frame(no.core.overlap.wrt.core)),Overlap = as.numeric(as.character(as.data.frame(no.core.overlap.wrt.core))))
+  rownames(no.core.overlap.df)=no.core.overlap.df$TF
+  no.core.overlap.df = no.core.overlap.df[order(no.core.overlap.df$Overlap,decreasing = T),]
+  
+  target.analysis.results = list()
+  target.analysis.results[[paste(query.mod,query.cc,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
+  return(target.analysis.results)
+}
+
+
+#' @title Find satellite transcription factors
+#' @description Find, among the constituent elements of a given modulon, transcription factors sharing targets with a modulon connected component above a given threshold of similarity, redundancy or overlap (see jaccard(),redundancy.wrt() and overlap() functions)
+#' @param data A list object where each element contains a dataframe  including the 'Similarity','Redundancy','Overlap' values of the modulon constituent elements not included within a given modulon connected component.
+#' @param feature Feature to be considered for the satellite detection. Possible values: c('Similarity','Redundancy','Overlap').
+#' @param threshold Cutoff value for either similarity, redundancy or overlap (number of common targets).
+#' @return List object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with the transcription factors above the threshold for the feature considered.
+#' @details This function collects the modulon constituent elements sharing targets with a given modulon above a given threshold of similarity, redundancy or overlap.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis.manual.query(net = network.TILs,
+#' mod = modulons.TILs,
+#' cc = cc.TILs,
+#' query.mod = '3',
+#' query.cc= 'cc.3') %>% Find.Sat()
+#' }
+#' }
+#' @rdname Find.Sat
+#' @export 
+Find.Sat = function(data,feature = 'Redundancy',threshold = 0,quant.prob = NULL){
+  Satellites = lapply(data,function(x){
+    x[[feature]][x[[feature]][feature]>threshold,'TF']
+  })
+  return(Satellites)
+}
+
+
+#' @title Filter satellite transcription factors by discriminant power
+#' @description Filter satellite transcription factors by discriminant power values derived from one or more discriminant analysis.
+#' @param sat.data List object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with satellite transcription factors.
+#' @param DA.data List object with the discriminant score of all the regulons derived from one or more discriminant analysis.
+#' @param DA OPLS-DA to be considered. This argument can take as value any of the names of DA.data list or several of them. If DA = 'Any', all the names of DA.data are considered.
+#' @param top.percent Quantile (in %) to be considered from the top of the discriminant score ranking.
+#' @return List object with as many elements as the modulon connected components provided in the input. Each element of the list contains a character vector with the corresponding satellite transcription factors that are among the top discriminant regulons from one or more discriminant analysis.
+#' @details This function remove satellite transcription factors with low discriminant power.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis.manual.query(net = network.TILs,
+#' mod = modulons.TILs,
+#' cc = cc.TILs,
+#' query.mod = '3',
+#' query.cc= 'cc.3') %>% Find.Sat() %>% Filter.Sat(DA.data = DA.TILs)
+#' }
+#' }
+#' @rdname Filter.Sat
+#' @export 
+Filter.Sat = function(sat.data,DA.data,DA=c('Any'),top.percent=10){
+  DA.only.top = lapply(DA.data,function(x){
+    y = x[x$Weights > quantile(x$Weights,prob = 1-(top.percent/100)), ,drop=FALSE]
+    return(y)
+  })
+  DA.only.top.names = lapply(DA.data,function(x){
+    y = rownames(x)[x$Weights > quantile(x$Weights,prob = 1-(top.percent/100))]
+    return(y)
+  })
+  
+  if(DA == 'Any'){
+    selection = names(DA.data)
+  }else{selection = DA}
+  
+  DA.only.top.names.selected = DA.only.top.names[selection]
+  
+  DA.selection = unique(as.character(unlist(DA.only.top.names.selected)))
+  
+  Satellites.Filtered = lapply(sat.data,function(x){
+    return(intersect(x,DA.selection))
+  })
+  return(Satellites.Filtered)
+}
