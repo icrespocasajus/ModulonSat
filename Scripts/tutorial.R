@@ -180,4 +180,134 @@ satellites = Find.Sat(target.analysis.results,feature = 'Redundancy',threshold =
 satellites.filtered = Filter.Sat(sat.data=satellites,DA.data = DA.TILs,DA=c("CD8_Tex_Vs_background","CD8_Tpex_Vs_background"),top.percent = 10) 
 satellites.filtered = Filter.Sat(sat.data=satellites,DA.data = DA.TILs,c("CD8_Tex_Vs_background"),top.percent = 25) 
 
+
+
+
+
+# Plot features
+# Libraries
+library(stringr)
+library(pheatmap)
+library(ggpubr)
+library(operators)
+
+modulons = modulons.TILs
+network = network.TILs
+regulons = split(network$Target,network$Source)
+
+regulons.big = regulons[modulons[['5']]]
+
+
+# Regulon redundancy
+feature = 'Redundancy'
+#feature = 'Overlap'
+
+feature.df = as.data.frame(matrix(NA,length(names(regulons.big)),length(names(regulons.big))))
+rownames(feature.df)=  str_sort( names(regulons.big),numeric = T)
+colnames(feature.df)= str_sort( names(regulons.big),numeric = T)
+
+for(i in 1:nrow(feature.df)){
+  row.tmp = rownames(feature.df)[i]
+  for(j in 1:ncol(feature.df)){
+    col.tmp = colnames(feature.df)[j]
+    if(feature == 'Redundancy'){feature.df[row.tmp,col.tmp]=redundancy(regulons.big[[row.tmp]],regulons.big[[col.tmp]])}
+    if(feature == 'Similarity'){feature.df[row.tmp,col.tmp]=jaccard(regulons.big[[row.tmp]],regulons.big[[col.tmp]])}
+    if(feature == 'Overlap'){feature.df[row.tmp,col.tmp]=overlap(regulons.big[[row.tmp]],regulons.big[[col.tmp]])}
+  }
   
+}
+feature.df=as.matrix(feature.df)
+diag(feature.df)=NA
+
+
+
+
+name.tmp = 'Modulon.3.TILs'
+phm=pheatmap::pheatmap(
+  feature.df,
+  main = paste(feature,name.tmp,sep = ' '),
+  display_numbers = F,
+  cluster_rows = T,
+  cluster_cols = T,
+  fontsize_row = 8,
+  show_rownames = T,
+  cellwidth = 8,
+  cellheight = 8,
+  fontsize_col = 8,
+  scale='none'
+)
+
+
+# Feature plot with annotation
+cc=cc.TILs
+
+regulatory.core = Modulon.Cores.TILs
+
+query = modulons[['5']]
+
+for(i in 1:length(query)){
+  for(j in 1:nrow(regulatory.core.df)){
+    modulon.tmp = regulatory.core
+  }  
+  query[i] %in% cc[[]]
+}
+
+
+annotation = c()
+for(i in 1:length(names(cc))){
+  modulon.tmp = names(cc)[i]
+  for(j in 1:length(names(cc[[modulon.tmp]]))){
+    cc.tmp = names(cc[[modulon.tmp]])[j]
+    for(k in 1:length(cc[[modulon.tmp]][[cc.tmp]])){
+      TF.tmp = cc[[modulon.tmp]][[cc.tmp]][k]
+      annotation = c(annotation,paste(modulon.tmp,cc.tmp,TF.tmp,sep = '__'))
+    }
+  } 
+}  
+annotation.df = data.frame(Modulon=ModulonCore::strsplit2(annotation,'__')[,1],
+                           cc=ModulonCore::strsplit2(annotation,'__')[,2],
+                           TF = ModulonCore::strsplit2(annotation,'__')[,3])
+
+rownames(annotation.df)=annotation.df$TF
+annotation.df$id = paste(annotation.df$Modulon,annotation.df$cc,sep = '__')
+annotation.df$Regulatory.Core = ifelse(annotation.df$id %in% regulatory.core,T,F)
+annotation.df$Regulatory.Core.Annotation = annotation.df$cc
+annotation.df$Regulatory.Core.Annotation[annotation.df$id %!in% regulatory.core]=NA
+
+
+
+
+
+annotation.c = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core.Annotation'])
+rownames(annotation.c)=rownames(feature.df)
+
+annotation.r = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core.Annotation'])
+rownames(annotation.r)=rownames(feature.df)
+
+
+name.tmp = 'Modulon.3.TILs'
+phm.input = feature.df[order(annotation.c$Regulatory.Core,decreasing = T),order(annotation.c$Regulatory.Core,decreasing = T)]
+#phm.input[upper.tri(phm.input)] = NA
+
+phm.annotated=pheatmap::pheatmap(
+  phm.input ,
+  main = paste(feature,name.tmp,sep = ' '),
+  display_numbers = F,
+  cluster_rows = F,
+  cluster_cols = F,
+  annotation_col = annotation.c,
+  annotation_row = annotation.c,
+  fontsize_row = 8,
+  show_rownames = T,
+  cellwidth = 8,
+  cellheight = 8,
+  fontsize_col = 8,
+  scale='none'
+)
+
+pdf(file="~/Desktop/rem.pdf",height = 12,width = 12)
+phm.annotated
+dev.off()
+
+
+

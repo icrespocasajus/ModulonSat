@@ -112,3 +112,23 @@
 #' @examples
 #' DA.LCMV
 "DA.LCMV"
+
+#' RegAUC.TILs Data
+#'
+#' Regulon AUC values
+
+#'
+#' @format A matrix with 11379 rows (cells) and 583 columns (regulons).
+#' @examples
+#' RegAUC.TILs
+"RegAUC.TILs"
+
+#' RegAUC.LCMV Data
+#'
+#' Regulon AUC values
+
+#'
+#' @format A matrix with 4000 rows (cells) and 646 columns (regulons).
+#' @examples
+#' RegAUC.LCMV
+"RegAUC.LCMV"
