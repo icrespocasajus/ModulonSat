@@ -418,7 +418,7 @@ Core.Membership.manual = function(data,mod,core){
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#' plots = plot.modulon.target.analysis(
+#' plots = Modulon.heatmap(
 #'  net = network.TILs,
 #'  mod = modulons.TILs,
 #'  cc = cc.TILs,
@@ -428,10 +428,9 @@ Core.Membership.manual = function(data,mod,core){
 #'  print(plots[['3']])
 #' }
 #' }
-#' @rdname plot.modulon.target.analysis
+#' @rdname Modulon.heatmap
 #' @export
-plot.modulon.target.analysis = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAUC){
-  
+Modulon.heatmap = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAUC){
   # Libraries
   library(stringr)
   library(pheatmap)
@@ -549,5 +548,6 @@ plot.modulon.target.analysis = function(net,mod,cc,regulatory.core,feature='Redu
     gc()
     plots[[name.tmp]]=phm.tmp
   }
+  return(plots)
 }
 
