@@ -272,6 +272,10 @@ target.analysis.manual.query = function(net,modulon,cc,query.mod,query.cc){
 }
 
 
+
+
+
+
 #' @title Find satellite transcription factors
 #' @description Find, among the constituent elements of a given modulon, transcription factors sharing targets with a modulon connected component above a given threshold of similarity, redundancy or overlap (see jaccard(),redundancy.wrt() and overlap() functions)
 #' @param data A list object where each element contains a dataframe  including the 'Similarity','Redundancy','Overlap' values of the modulon constituent elements not included within a given modulon connected component.
@@ -342,3 +346,208 @@ Filter.Sat = function(sat.data,DA.data,DA=c('Any'),top.percent=10){
   })
   return(Satellites.Filtered)
 }
+
+
+
+
+
+#' @title Calculate modulon membership
+#' @description Calculation of the correlation (Spearman) between the first principal component (PC1) of a subset of the regulon activity matrix with only modulon constituent elements and each of these elements.
+#' @param data Matrix of dataframe with regulon activity.
+#' @param mod List object with each modulon constituent elements.
+#' @return List object with as many elements as modulons. Each element of the list contains a character vector with the corresponding modulon constituent elements.
+#' @details This function subsets the regulon activity matrix to include only modulon constituent elements. After centering and scaling the resulting matrix, a PCA is performed; the PC1 is then correlated with the regulon activity of each modulon constituent element. 
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' Modulon.Membership(data = RegAUC.TILs, mod = modulons.TILs)
+#' }
+#' }
+#' @rdname Modulon.Membership
+#' @export 
+Modulon.Membership = function(data,mod){
+  membership.results = lapply(mod,function(mod.tmp){
+    prcomp.res = prcomp(data[,mod.tmp],center = T,scale. = T,rank. = 1)
+    prcomp.res.df = as.data.frame(prcomp.res[["x"]])
+    cor.results = as.data.frame(abs(t(cor(x = prcomp.res.df[rownames(data),'PC1'],y=data[rownames(data),mod.tmp],method = 'spearman'))))
+    colnames(cor.results)='R.PC1'
+    cor.results = cor.results[order(cor.results[,'R.PC1'],decreasing = T),,drop=F]
+    return(cor.results)
+  })
+  return(membership.results)
+}
+
+
+
+#' @title Calculate modulon regulatory core membership
+#' @description Calculation of the correlation (Spearman) between the first principal component (PC1) of a subset of the regulon activity matrix with only modulon regulatory core constituent elements and each of these elements.
+#' @param data Matrix of dataframe with regulon activity.
+#' @param mod A character vector with a given modulon constituent elements.
+#' @param core A character vector with a given modulon regulatory core constituent elements
+#' @return List object with as many elements as modulons. Each element of the list contains a character vector with the corresponding modulon constituent elements.
+#' @details This function subsets the regulon activity matrix to include only a given modulon regulatory core constituent elements. After centering and scaling the resulting matrix, a PCA is performed; the PC1 is then correlated with the regulon activity of each modulon constituent element. 
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' Core.Membership.manual(data = RegAUC.TILs, mod = modulons.TILs[['3']],core=cc.TILs[['3']][['cc.3']])
+#' }
+#' }
+#' @rdname Core.Membership.manual
+#' @export 
+Core.Membership.manual = function(data,mod,core){
+  prcomp.res = prcomp(data[,core],center = T,scale. = T,rank. = 1)
+  prcomp.res.df = as.data.frame(prcomp.res[["x"]])
+  cor.results = as.data.frame(abs(t(cor(x = prcomp.res.df[rownames(data),'PC1'],y=data[rownames(data),mod],method = 'spearman'))))
+  colnames(cor.results)='R.PC1'
+  cor.results = cor.results[order(cor.results[,'R.PC1'],decreasing = T),,drop=F]
+  return(cor.results)
+}
+
+
+
+#' @title Plot modulon target similarity, redundancy or overlap.
+#' @description Plot a heatmap displaying modulon target similarity, redundancy or overlap.
+#' @param net List R object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with satellite transcription factors.
+#' @param mod List object with each modulon constituent elements.
+#' @param cc List with the connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @param regulatory.core Regulatory core names.
+#' @param feature Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap")
+#' @param RegAUC Regulon activity matrix.
+#' @return List object with as many elements as modulons; each element contain a heatmap.
+#' @details This function generates a heatmap to explore the results of the modulon target analysis
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' plots = plot.modulon.target.analysis(
+#'  net = network.TILs,
+#'  mod = modulons.TILs,
+#'  cc = cc.TILs,
+#'  regulatory.core = Modulon.Cores.TILs,
+#'  feature = 'Redundancy',
+#'  RegAUC = RegAUC.TILs)
+#'  print(plots[['3']])
+#' }
+#' }
+#' @rdname plot.modulon.target.analysis
+#' @export
+plot.modulon.target.analysis = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAUC){
+  
+  # Libraries
+  library(stringr)
+  library(pheatmap)
+  library(operators)
+  
+  regulons = split(net$Target,net$Source)
+  
+  annotation = c()
+  for(i in 1:length(names(cc))){
+    modulon.tmp = names(cc)[i]
+    for(j in 1:length(names(cc[[modulon.tmp]]))){
+      cc.tmp = names(cc[[modulon.tmp]])[j]
+      for(k in 1:length(cc[[modulon.tmp]][[cc.tmp]])){
+        TF.tmp = cc[[modulon.tmp]][[cc.tmp]][k]
+        annotation = c(annotation,paste(modulon.tmp,cc.tmp,TF.tmp,sep = '__'))
+      }
+    } 
+  }  
+  annotation.df = data.frame(Modulon=ModulonCore::strsplit2(annotation,'__')[,1],
+                             cc=ModulonCore::strsplit2(annotation,'__')[,2],
+                             TF = ModulonCore::strsplit2(annotation,'__')[,3])
+  
+  rownames(annotation.df)=annotation.df$TF
+  
+  annotation.df$id = paste(annotation.df$Modulon,annotation.df$cc,sep = '__')
+  annotation.df$Regulatory.Core = ifelse(annotation.df$id %in% regulatory.core,'Yes','Not')
+  annotation.df$Regulatory.Core.Annotation = annotation.df$cc
+  annotation.df$Regulatory.Core.Annotation[annotation.df$id %!in% regulatory.core]=NA
+  
+  tab.tmp = table(annotation.df$id) > 1
+  true.cc = names(tab.tmp)[tab.tmp ]
+  annotation.df[annotation.df$id %!in% true.cc,'cc']=NA
+  
+  # Add modulon membership
+  Modulon.Membership.results = Modulon.Membership(data=RegAUC,mod=mod)
+  
+  # Generate plots
+  plots = list()
+  for(h in 1:length(names(mod))){
+    name.tmp = names(mod)[h]
+    
+    regulons.tmp = regulons[mod[[name.tmp]]]
+    
+    feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
+    rownames(feature.df)=  str_sort( names(regulons.tmp),numeric = T)
+    colnames(feature.df)= str_sort( names(regulons.tmp),numeric = T)
+    
+    for(i in 1:nrow(feature.df)){
+      row.tmp = rownames(feature.df)[i]
+      for(j in 1:ncol(feature.df)){
+        col.tmp = colnames(feature.df)[j]
+        if(feature == 'Redundancy'){feature.df[row.tmp,col.tmp]=redundancy(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+        if(feature == 'Similarity'){feature.df[row.tmp,col.tmp]=jaccard(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+        if(feature == 'Overlap'){feature.df[row.tmp,col.tmp]=overlap(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+      }
+      
+    }
+    feature.df=as.matrix(feature.df)
+    diag(feature.df)=NA
+    
+    # Annotation
+    
+    annotation.c = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
+                              Connected.Component=annotation.df[rownames(feature.df),'cc'],
+                              Modulon.Membership=Modulon.Membership.results[[name.tmp]][rownames(feature.df),'R.PC1'])
+    rownames(annotation.c)=rownames(feature.df)
+    
+    annotation.r = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
+                              Connected.Component=annotation.df[rownames(feature.df),'cc'])
+    rownames(annotation.r)=rownames(feature.df)
+    
+    ann_colors = list(
+      Modulon.Membership = c("white", "darkgreen"),
+      Regulatory.Core = c(Yes = 'black', Not='white')
+    )
+    
+    # Heatmap input
+    phm.input = feature.df[order(annotation.c$Connected.Component,decreasing = T),order(annotation.c$Connected.Component,decreasing = T)]
+    
+    
+    # Gaps connected components
+    generate.gaps = function(data,col){
+      character.tmp = data[,col,drop=T]
+      gaps = c()
+      for(i in 1:length(character.tmp)){
+        if(!(is.na(character.tmp[i]))&!(is.na(character.tmp[i+1]))&!(character.tmp[i] == character.tmp[i+1])){gaps = c(gaps,i)}
+      }
+      for(i in 1:length(character.tmp)){
+        if(!(is.na(character.tmp[i]))&(is.na(character.tmp[i+1]))){gaps = c(gaps,i)}
+      }
+      return(gaps)
+    }
+    
+    gaps = generate.gaps(data=annotation.c[rownames(phm.input),],col='Connected.Component')
+    
+    phm.tmp = pheatmap::pheatmap(
+      phm.input ,
+      main = paste(feature,' Modulon ',name.tmp,sep = ' '),
+      display_numbers = F,
+      cluster_rows = F,
+      cluster_cols = F,
+      gaps_row = gaps,
+      gaps_col = gaps,
+      annotation_col = annotation.c,
+      annotation_row = annotation.r,
+      annotation_color = ann_colors,
+      fontsize_row = 8,
+      show_rownames = 8,
+      cellwidth = 8,
+      cellheight = 8,
+      fontsize_col = 8,
+      scale='none'
+    )
+    dev.off()
+    gc()
+    plots[[name.tmp]]=phm.tmp
+  }
+}
+
