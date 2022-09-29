@@ -475,8 +475,8 @@ Modulon.heatmap = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAU
     regulons.tmp = regulons[mod[[name.tmp]]]
     
     feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
-    rownames(feature.df)=  str_sort( names(regulons.tmp),numeric = T)
-    colnames(feature.df)= str_sort( names(regulons.tmp),numeric = T)
+    rownames(feature.df)=  stringr::str_sort( names(regulons.tmp),numeric = T)
+    colnames(feature.df)= stringr::str_sort( names(regulons.tmp),numeric = T)
     
     for(i in 1:nrow(feature.df)){
       row.tmp = rownames(feature.df)[i]
@@ -551,3 +551,189 @@ Modulon.heatmap = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAU
   return(plots)
 }
 
+
+
+
+
+
+
+#' @title Plot modulon target similarity, redundancy or overlap wrt specific connected components.
+#' @description Plot a heatmap displaying modulon target similarity, redundancy or overlap wrt specific connected components.
+#' @param net List R object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with satellite transcription factors.
+#' @param mod List object with each modulon constituent elements.
+#' @param cc List with the connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @param regulatory.core Regulatory core names.
+#' @param feature Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap")
+#' @param RegAUC Regulon activity matrix.
+#' @return List object with as many elements as modulons; each element contain a heatmap.
+#' @details This function generates a heatmap to explore the results of the modulon target analysis
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' plots = Modulon.heatmap(
+#'  net = network.TILs,
+#'  mod = modulons.TILs,
+#'  cc = cc.TILs,
+#'  regulatory.core = Modulon.Cores.TILs,
+#'  feature = 'Redundancy',
+#'  RegAUC = RegAUC.TILs)
+#'  print(plots[['3']])
+#' }
+#' }
+#' @rdname Modulon.heatmap.sat
+#' @export
+Modulon.heatmap.sat = function(net,mod,cc,regulatory.core,feature='Redundancy',sat,DA.data,DA='Any'){
+  # Libraries
+  library(stringr)
+  library(pheatmap)
+  library(operators)
+  
+  regulons = split(net$Target,net$Source)
+  
+  annotation = c()
+  for(i in 1:length(names(cc))){
+    modulon.tmp = names(cc)[i]
+    for(j in 1:length(names(cc[[modulon.tmp]]))){
+      cc.tmp = names(cc[[modulon.tmp]])[j]
+      for(k in 1:length(cc[[modulon.tmp]][[cc.tmp]])){
+        TF.tmp = cc[[modulon.tmp]][[cc.tmp]][k]
+        annotation = c(annotation,paste(modulon.tmp,cc.tmp,TF.tmp,sep = '__'))
+      }
+    } 
+  }  
+  annotation.df = data.frame(Modulon=ModulonCore::strsplit2(annotation,'__')[,1],
+                             cc=ModulonCore::strsplit2(annotation,'__')[,2],
+                             TF = ModulonCore::strsplit2(annotation,'__')[,3])
+  
+  rownames(annotation.df)=annotation.df$TF
+  
+  annotation.df$id = paste(annotation.df$Modulon,annotation.df$cc,sep = '__')
+  annotation.df$Regulatory.Core = ifelse(annotation.df$id %in% regulatory.core,'Yes','Not')
+  annotation.df$Regulatory.Core.Annotation = annotation.df$cc
+  annotation.df$Regulatory.Core.Annotation[annotation.df$id %!in% regulatory.core]=NA
+  
+  tab.tmp = table(annotation.df$id) > 1
+  true.cc = names(tab.tmp)[tab.tmp ]
+  annotation.df[annotation.df$id %!in% true.cc,'cc']=NA
+  
+  # Add modulon membership
+  Modulon.Membership.results = Modulon.Membership(data=RegAUC,mod=mod)
+  
+  # Generate plots
+  plots = list()
+  for(h in 1:length(regulatory.core)){
+      mod.tmp = ModulonCore::strsplit2(regulatory.core[h],'__')[,1]
+      cc.tmp = ModulonCore::strsplit2(regulatory.core[h],'__')[,2]
+      regulons.tmp = regulons[mod[[mod.tmp]]]
+      regulons.cc.tmp = regulons[cc[[mod.tmp]][[cc.tmp]]]
+      cc.targets.tmp = as.character(unlist(regulons.cc.tmp))
+      
+      feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
+      rownames(feature.df)=  stringr::str_sort( names(regulons.tmp),numeric = T)
+      colnames(feature.df)= stringr::str_sort( names(regulons.tmp),numeric = T)
+      
+      for(i in 1:nrow(feature.df)){
+        row.tmp = rownames(feature.df)[i]
+        for(j in 1:ncol(feature.df)){
+          col.tmp = colnames(feature.df)[j]
+          if(feature == 'Redundancy'){feature.df[row.tmp,col.tmp]=redundancy(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+          if(feature == 'Similarity'){feature.df[row.tmp,col.tmp]=jaccard(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+          if(feature == 'Overlap'){feature.df[row.tmp,col.tmp]=overlap(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+        }
+      }  
+      feature.df=as.matrix(feature.df)
+      diag(feature.df)=NA
+      
+      # Highlight only the selected regulatory core
+      annotation.df$Regulatory.Core = ifelse(rownames(annotation.df) %in% names(regulons.cc.tmp),'Yes','Not')
+      
+      # Add core membership to the annotation
+      Core.Membership.results = Core.Membership.manual(data=RegAUC,mod=mod[[mod.tmp]],core=cc[[mod.tmp]][[cc.tmp]] )
+      
+
+      
+      # Annotation
+      
+      annotation.c = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
+                                Regulatory.Core.Satellite = ifelse(rownames(feature.df) %in% sat[[paste(mod.tmp,cc.tmp,sep = '__')]],'Yes','Not'),
+                                Connected.Component=annotation.df[rownames(feature.df),'cc'],
+                                Regulatory.Core.Membership = Core.Membership.results[rownames(feature.df),'R.PC1'],
+                                Modulon.Membership=Modulon.Membership.results[[mod.tmp]][rownames(feature.df),'R.PC1'])
+      rownames(annotation.c)=rownames(feature.df)
+      
+      annotation.r = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
+                                Regulatory.Core.Satellite = ifelse(rownames(feature.df) %in% sat[[paste(mod.tmp,cc.tmp,sep = '__')]],'Yes','Not'),
+                                Connected.Component=annotation.df[rownames(feature.df),'cc'])
+      rownames(annotation.r)=rownames(feature.df)
+      
+      ann_colors = list(
+        Modulon.Membership = c("white", "darkgreen"),
+        #Discriminant.Power = c("white", "black"),
+        Regulatory.Core.Membership = c("white", "firebrick"),
+        Regulatory.Core = c(Yes = 'black', Not='white'),
+        Regulatory.Core.Satellite = c(Yes = 'red', Not='white')
+      )
+      
+      # Add DA
+      
+      for(da in 1:length(names(DA.data))){
+        name.tmp = names(DA.data)[da]
+        annotation.c[,name.tmp] = DA.data[[name.tmp]][rownames(feature.df),'Weights']
+      }
+      
+
+      my.breaks <- c(seq(-1, 1, by=0.001)) 
+      my.colors <- colorRampPalette(colors = c("white", "black"))(length(my.breaks))
+      my.colors.df = data.frame(colors = my.colors,breaks=as.numeric(round(my.breaks,digits = 3)))
+
+      for(da in 1:length(names(DA.data))){
+        name.tmp = names(DA.data)[da]
+        max.tmp=as.numeric(round(max(annotation.c[,name.tmp]),digits = 3))
+        min.tmp=as.numeric(round(min(annotation.c[,name.tmp]),digits = 3))
+        max.tmp.color=my.colors.df[(my.colors.df$breaks == max.tmp),'colors']
+        min.tmp.color=my.colors.df[(my.colors.df$breaks == min.tmp),'colors']
+        ann_colors[[name.tmp]] = c(min.tmp.color, max.tmp.color)
+      }
+      # Heatmap input
+      phm.input = feature.df[order(annotation.c$Connected.Component,decreasing = T),order(annotation.c$Connected.Component,decreasing = T)]
+      
+      
+      # Gaps connected components
+      generate.gaps = function(data,col){
+        character.tmp = data[,col,drop=T]
+        gaps = c()
+        for(i in 1:length(character.tmp)){
+          if(!(is.na(character.tmp[i]))&!(is.na(character.tmp[i+1]))&!(character.tmp[i] == character.tmp[i+1])){gaps = c(gaps,i)}
+        }
+        for(i in 1:length(character.tmp)){
+          if(!(is.na(character.tmp[i]))&(is.na(character.tmp[i+1]))){gaps = c(gaps,i)}
+        }
+        return(gaps)
+      }
+      
+      gaps = generate.gaps(data=annotation.c[rownames(phm.input),],col='Connected.Component')
+      
+      phm.tmp = pheatmap::pheatmap(
+        phm.input ,
+        main = paste(feature,' Modulon ',mod.tmp,'core ',cc.tmp,sep = ' '),
+        display_numbers = F,
+        cluster_rows = F,
+        cluster_cols = F,
+        gaps_row = gaps,
+        gaps_col = gaps,
+        annotation_col = annotation.c,
+        annotation_row = annotation.r,
+        annotation_color = ann_colors,
+        fontsize_row = 8,
+        show_rownames = 8,
+        cellwidth = 8,
+        cellheight = 8,
+        fontsize_col = 8,
+        scale='none'
+      )
+      dev.off()
+      gc()
+      plots[[paste(mod.tmp,cc.tmp,sep = '__')]]=phm.tmp
+  }
+  return(plots)
+}
