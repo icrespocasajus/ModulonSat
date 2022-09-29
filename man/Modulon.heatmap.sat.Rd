@@ -12,7 +12,8 @@ Modulon.heatmap.sat(
   feature = "Redundancy",
   sat,
   DA.data,
-  DA = "Any"
+  DA = "Any",
+  RegAUC
 )
 }
 \arguments{

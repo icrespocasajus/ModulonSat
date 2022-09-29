@@ -582,7 +582,7 @@ Modulon.heatmap = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAU
 #' }
 #' @rdname Modulon.heatmap.sat
 #' @export
-Modulon.heatmap.sat = function(net,mod,cc,regulatory.core,feature='Redundancy',sat,DA.data,DA='Any'){
+Modulon.heatmap.sat = function(net,mod,cc,regulatory.core,feature='Redundancy',sat,DA.data,DA='Any',RegAUC){
   # Libraries
   library(stringr)
   library(pheatmap)
