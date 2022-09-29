@@ -172,11 +172,9 @@ target.analysis = function(net,mod,cc){
 
 target.analysis.results=target.analysis(net = network.TILs,
                                         mod = modulons.TILs,
-                                        cc = cc.TILs
-)
+                                        cc = cc.TILs)
 
 satellites = Find.Sat(target.analysis.results,feature = 'Redundancy',threshold = 0)
-
 satellites.filtered = Filter.Sat(sat.data=satellites,DA.data = DA.TILs,DA=c("CD8_Tex_Vs_background","CD8_Tpex_Vs_background"),top.percent = 10) 
 satellites.filtered = Filter.Sat(sat.data=satellites,DA.data = DA.TILs,c("CD8_Tex_Vs_background"),top.percent = 25) 
 
@@ -356,17 +354,12 @@ annotation.c.core = data.frame(
 
 rownames(annotation.c.core)=rownames(feature.df)
 
-
-
 annotation.r.core = data.frame(
   Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
   Regulatory.Core.Satellite = ifelse(rownames(feature.df) %in% satellites.filtered[[paste(modulon.query,regulatory.core.query,sep = '__')]],'Yes','Not'),
   Connected.Component=annotation.df[rownames(feature.df),'cc'])
 
 rownames(annotation.r.core)=rownames(feature.df)
-
-
-
 
 ann_colors.core = list(
   Modulon.Membership = c("white", "darkgreen"),
