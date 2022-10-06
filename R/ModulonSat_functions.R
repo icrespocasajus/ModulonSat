@@ -737,3 +737,260 @@ Modulon.heatmap.sat = function(net,mod,cc,regulatory.core,feature='Redundancy',s
   }
   return(plots)
 }
+
+
+
+
+
+
+
+
+
+
+#' @title Plot modulon target similarity, redundancy or overlap.
+#' @description Plot a heatmap displaying modulon target similarity, redundancy or overlap.
+#' @param net List R object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with satellite transcription factors.
+#' @param mod List object with each modulon constituent elements.
+#' @param cc List with the connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @param regulatory.core Regulatory core names.
+#' @param feature Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap")
+#' @param RegAUC Regulon activity matrix.
+#' @return List object with as many elements as modulons; each element contain a heatmap.
+#' @details This function generates a heatmap to explore the results of the modulon target analysis
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' plots = Modulon.corrplot(
+#'  net = network.TILs,
+#'  mod = modulons.TILs,
+#'  cc = cc.TILs,
+#'  regulatory.core = Modulon.Cores.TILs,
+#'  feature = 'Redundancy',
+#'  RegAUC = RegAUC.TILs)
+#'  print(plots[['3']])
+#' }
+#' }
+#' @rdname Modulon.corrplot
+#' @export
+Modulon.corrplot = function(net,mod,cc,regulatory.core,feature='Redundancy',RegAUC){
+  # Libraries
+  library(stringr)
+  library(corrplot)
+  library(RColorBrewer)
+  library(operators)
+  
+  regulons = split(net$Target,net$Source)
+  
+  annotation = c()
+  for(i in 1:length(names(cc))){
+    modulon.tmp = names(cc)[i]
+    for(j in 1:length(names(cc[[modulon.tmp]]))){
+      cc.tmp = names(cc[[modulon.tmp]])[j]
+      for(k in 1:length(cc[[modulon.tmp]][[cc.tmp]])){
+        TF.tmp = cc[[modulon.tmp]][[cc.tmp]][k]
+        annotation = c(annotation,paste(modulon.tmp,cc.tmp,TF.tmp,sep = '__'))
+      }
+    } 
+  }  
+  annotation.df = data.frame(Modulon=ModulonCore::strsplit2(annotation,'__')[,1],
+                             cc=ModulonCore::strsplit2(annotation,'__')[,2],
+                             TF = ModulonCore::strsplit2(annotation,'__')[,3])
+  
+  rownames(annotation.df)=annotation.df$TF
+  
+  annotation.df$id = paste(annotation.df$Modulon,annotation.df$cc,sep = '__')
+  annotation.df$Regulatory.Core = ifelse(annotation.df$id %in% regulatory.core,'Yes','Not')
+  annotation.df$Regulatory.Core.Annotation = annotation.df$cc
+  annotation.df$Regulatory.Core.Annotation[annotation.df$id %!in% regulatory.core]=NA
+  
+  tab.tmp = table(annotation.df$id) > 1
+  true.cc = names(tab.tmp)[tab.tmp ]
+  annotation.df[annotation.df$id %!in% true.cc,'cc']=NA
+  
+  # Add modulon membership
+  Modulon.Membership.results = Modulon.Membership(data=RegAUC,mod=mod)
+  
+  # Generate plots
+  plots = list()
+  for(h in 1:length(names(mod))){
+    name.tmp = names(mod)[h]
+    
+    regulons.tmp = regulons[mod[[name.tmp]]]
+    
+    feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
+    rownames(feature.df)=  stringr::str_sort( names(regulons.tmp),numeric = T)
+    colnames(feature.df)= stringr::str_sort( names(regulons.tmp),numeric = T)
+    
+    for(i in 1:nrow(feature.df)){
+      row.tmp = rownames(feature.df)[i]
+      for(j in 1:ncol(feature.df)){
+        col.tmp = colnames(feature.df)[j]
+        if(feature == 'Redundancy'){feature.df[row.tmp,col.tmp]=redundancy(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+        if(feature == 'Similarity'){feature.df[row.tmp,col.tmp]=jaccard(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+        if(feature == 'Overlap'){feature.df[row.tmp,col.tmp]=overlap(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])}
+      }
+      
+    }
+    feature.df=as.matrix(feature.df)
+    diag(feature.df)=NA
+    
+    # Annotation
+    
+    annotation.c = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
+                              Connected.Component=annotation.df[rownames(feature.df),'cc'],
+                              Modulon.Membership=Modulon.Membership.results[[name.tmp]][rownames(feature.df),'R.PC1'])
+    rownames(annotation.c)=rownames(feature.df)
+    
+    annotation.r = data.frame(Regulatory.Core = annotation.df[rownames(feature.df),'Regulatory.Core'],
+                              Connected.Component=annotation.df[rownames(feature.df),'cc'])
+    rownames(annotation.r)=rownames(feature.df)
+    
+    ann_colors = list(
+      Modulon.Membership = c("white", "darkgreen"),
+      Regulatory.Core = c(Yes = 'black', Not='white')
+    )
+    
+    # Heatmap input
+    phm.input = feature.df[order(annotation.c$Connected.Component,decreasing = T),order(annotation.c$Connected.Component,decreasing = T)]
+    
+    
+    # Gaps connected components
+    generate.gaps = function(data,col){
+      character.tmp = data[,col,drop=T]
+      gaps = c()
+      for(i in 1:length(character.tmp)){
+        if(!(is.na(character.tmp[i]))&!(is.na(character.tmp[i+1]))&!(character.tmp[i] == character.tmp[i+1])){gaps = c(gaps,i)}
+      }
+      for(i in 1:length(character.tmp)){
+        if(!(is.na(character.tmp[i]))&(is.na(character.tmp[i+1]))){gaps = c(gaps,i)}
+      }
+      return(gaps)
+    }
+    
+    gaps = generate.gaps(data=annotation.c[rownames(phm.input),],col='Connected.Component')
+    
+    phm.tmp = corrplot::corrplot(
+      phm.input,
+      type="upper",
+      order="hclust",
+      col=RColorBrewer::brewer.pal(n=8, name="RdYlBu")
+    )  
+    dev.off()
+    gc()
+    plots[[name.tmp]]=phm.tmp
+  }
+  return(plots)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#' @title Modulon target analysis: similarity, redundancy and overlap
+#' @description Generate the matrix with all pair-wise comparisons within a given modulon for each of the following features:"Redundancy","Similarity" and "Overlap".
+#' @param net List R object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with satellite transcription factors.
+#' @param mod List object with each modulon constituent elements.
+#' @param mod.query The name of the modulon to be analysed.
+#' @return List object with three objects ("Redundancy","Similarity" and "Overlap") with the corresponding matrices.
+#' @details This function perform the modulon target analysis.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
+#' }
+#' }
+#' @rdname target.analysis.modulon
+#' @export
+target.analysis.modulon = function(net,mod,mod.query){
+  library(stringr)
+
+  regulons = split(net$Target,net$Source)
+  name.tmp = mod.query
+  regulons.tmp = regulons[mod[[name.tmp]]]
+  
+  feature.df.list = list()
+  
+  # Redundancy
+  feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
+  rownames(feature.df)=  stringr::str_sort( names(regulons.tmp),numeric = T)
+  colnames(feature.df)= stringr::str_sort( names(regulons.tmp),numeric = T)
+  for(i in 1:nrow(feature.df)){
+    row.tmp = rownames(feature.df)[i]
+    for(j in 1:ncol(feature.df)){
+      col.tmp = colnames(feature.df)[j]
+      feature.df[row.tmp,col.tmp]=redundancy(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])
+    }
+  }
+  feature.df=as.matrix(feature.df)
+  diag(feature.df)=0
+  feature.df.list[['Redundancy']]=feature.df 
+  
+  # Similarity
+  feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
+  rownames(feature.df)=  stringr::str_sort( names(regulons.tmp),numeric = T)
+  colnames(feature.df)= stringr::str_sort( names(regulons.tmp),numeric = T)
+  for(i in 1:nrow(feature.df)){
+    row.tmp = rownames(feature.df)[i]
+    for(j in 1:ncol(feature.df)){
+      col.tmp = colnames(feature.df)[j]
+      feature.df[row.tmp,col.tmp]=jaccard(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])
+    }
+  }
+  feature.df=as.matrix(feature.df)
+  diag(feature.df)=0
+  feature.df.list[['Similarity']]=feature.df 
+  
+  
+  # Overlap
+  feature.df = as.data.frame(matrix(NA,length(names(regulons.tmp)),length(names(regulons.tmp))))
+  rownames(feature.df)=  stringr::str_sort( names(regulons.tmp),numeric = T)
+  colnames(feature.df)= stringr::str_sort( names(regulons.tmp),numeric = T)
+  for(i in 1:nrow(feature.df)){
+    row.tmp = rownames(feature.df)[i]
+    for(j in 1:ncol(feature.df)){
+      col.tmp = colnames(feature.df)[j]
+      feature.df[row.tmp,col.tmp]=overlap(regulons.tmp[[row.tmp]],regulons.tmp[[col.tmp]])
+    }
+  }
+  feature.df=as.matrix(feature.df)
+  diag(feature.df)=0
+  feature.df.list[['Overlap']]=feature.df 
+  
+  return(feature.df.list)
+}
+
+
+#' @title Plot results of the modulon target analysis
+#' @description Generate the plot for the matrix with all pair-wise comparisons within a given modulon for one of the following features:"Redundancy","Similarity" and "Overlap".
+#' @param data List object with three elements ("Redundancy","Similarity" and "Overlap") with the corresponding matrices.
+#' @param feature Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap").
+#' @return A corrplot() object.
+#' @details This function generates a plot showing the results of the modulon target analysis of a given modulon.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
+#' plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
+#' }
+#' }
+#' @rdname plot.target.analysis.modulon
+#' @export
+plot.target.analysis.modulon = function(data,feature='Redundancy'){
+  library(corrplot)
+  feature.df = data[[feature]]
+  if(feature == 'Redundancy'){color = 'YlGn'}
+  if(feature == 'Similarity'){color = 'Purples'}
+  if(feature == 'Overlap'){color = 'YlOrBr'}
+  return(corrplot(feature.df, type = 'lower',method = 'pie' , order = 'alphabet', tl.col = 'black',cl.ratio = 0.2, tl.srt = 45, col = COL1(color, 10),is.corr = F,title = paste("\n\n\n",'Modulon ',feature,sep = ""),tl.cex=0.75))
+}  

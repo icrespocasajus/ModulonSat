@@ -1,53 +1,41 @@
+library(ModulonSat)
+library(corrplot)
+library(ggplot2)
 
-network = network.TILs
-modulons = modulons.TILs
-cc = cc.TILs
-modulon.tmp = '3'
-core.tmp = cc[[modulon.tmp]][['cc.3']]
+# Modulon target analysis
+results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
+plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
 
-target.analysis.manual.query = function(net,mod,cc,query.mod,query.cc){
-  network = net
-  modulons = mod
-  cc = cc
-  modulon.tmp = query.mod
-  core.tmp = cc[[modulon.tmp]][[query.cc]]
-  
-  regulons = split(network$Target,network$Source)
-  core.targets.tmp = as.character(unlist(regulons[core.tmp]))
-  regulons.subset.core = regulons[core.tmp]
-  regulons.subset.no.core = regulons[setdiff(modulons[[modulon.tmp]],core.tmp)]
+pdf(file=paste('./Modulon',mod.query,feature,'.pdf',sep = "_"),height = 12,width = 12)
+plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
+dev.off()
 
-  no.core.redundancy.wrt.core = lapply(regulons.subset.no.core,function(x){
-    tf.targets.tmp = as.character(unlist(x))
-    redundancy.tmp = redundancy.wrt(tf.targets.tmp,core.targets.tmp)
-    return(redundancy.tmp)
-  })
-  no.core.redundancy.df = data.frame(TF=names(as.data.frame(no.core.redundancy.wrt.core)),Redundancy = as.numeric(as.character(as.data.frame(no.core.redundancy.wrt.core))))
-  rownames(no.core.redundancy.df)=no.core.redundancy.df$TF
-  no.core.redundancy.df = no.core.redundancy.df[order(no.core.redundancy.df$Redundancy,decreasing = T),]
-  
-  no.core.similarity.wrt.core = lapply(regulons.subset.no.core,function(x){
-    tf.targets.tmp = as.character(unlist(x))
-    redundancy.tmp = jaccard(tf.targets.tmp,core.targets.tmp)
-    return(redundancy.tmp)
-  })
-  no.core.similarity.df = data.frame(TF=names(as.data.frame(no.core.similarity.wrt.core)),Similarity = as.numeric(as.character(as.data.frame(no.core.similarity.wrt.core))))
-  rownames(no.core.similarity.df)=no.core.similarity.df$TF
-  no.core.similarity.df = no.core.similarity.df[order(no.core.similarity.df$Similarity,decreasing = T),]
-  
-  no.core.overlap.wrt.core = lapply(regulons.subset.no.core,function(x){
-    tf.targets.tmp = as.character(unlist(x))
-    overlap.tmp = overlap(tf.targets.tmp,core.targets.tmp)
-    return(overlap.tmp)
-  })
-  no.core.overlap.df = data.frame(TF=names(as.data.frame(no.core.overlap.wrt.core)),Overlap = as.numeric(as.character(as.data.frame(no.core.overlap.wrt.core))))
-  rownames(no.core.overlap.df)=no.core.overlap.df$TF
-  no.core.overlap.df = no.core.overlap.df[order(no.core.overlap.df$Overlap,decreasing = T),]
-  
-  target.analysis.results = list()
-  target.analysis.results[[paste(query.mod,query.cc,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
-  return(target.analysis.results)
-}
+
+
+
+
+
+
+
+# Modulon target analysis wrt connected components
+plots = Modulon.heatmap(
+net = network.TILs,
+mod = modulons.TILs,
+cc = cc.TILs,
+regulatory.core = Modulon.Cores.TILs,
+feature = 'Overlap',
+RegAUC = RegAUC.TILs)
+print(plots[['3']])
+dev.off()
+print(plots[['5']])
+
+
+# Target analysis wrt each core
+targets.analysis.results =target.analysis(net = network.TILs,
+                mod = modulons.TILs,
+                cc = cc.TILs
+)
+
 
 ### Select satellites
 
