@@ -2,28 +2,29 @@
 % Please edit documentation in R/ModulonSat_functions.R
 \name{plot.target.analysis.modulon}
 \alias{plot.target.analysis.modulon}
-\title{caca}
+\title{Plot results of the modulon target analysis}
 \usage{
-\method{plot}{target.analysis.modulon}(data, feature = "Redundancy")
+\method{plot}{target.analysis.modulon}(data, feature = "Redundancy", color = "YlGn")
 }
 \arguments{
-\item{a}{A vector.}
+\item{data}{List object with three elements ("Redundancy","Similarity" and "Overlap") with the corresponding matrices.}
 
-\item{b}{A vector.}
+\item{feature}{Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap").}
 }
 \value{
-Jaccard distance calculated as the ratio between the intersection and the union of the two vectors.
+A corrplot() object.
 }
 \description{
-Calculate Jaccard distance between two vectors.
+Generate the plot for the matrix with all pair-wise comparisons within a given modulon for one of the following features:"Redundancy","Similarity" and "Overlap".
 }
 \details{
-DETAILS
+This function generates a plot showing the results of the modulon target analysis of a given modulon.
 }
 \examples{
 \dontrun{
 if(interactive()){
- jaccard(c('A','B','C','D','E'), c('A','B','C'))
- }
+results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
+plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
+}
 }
 }

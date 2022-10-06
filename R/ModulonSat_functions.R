@@ -1,22 +1,23 @@
 suppressMessages(require(igraph))
 
 
-#' @title caca
-#' @description Calculate Jaccard distance between two vectors.
-#' @param a A vector.
-#' @param b A vector.
-#' @return Jaccard distance calculated as the ratio between the intersection and the union of the two vectors.
-#' @details DETAILS
+#' @title Plot results of the modulon target analysis
+#' @description Generate the plot for the matrix with all pair-wise comparisons within a given modulon for one of the following features:"Redundancy","Similarity" and "Overlap".
+#' @param data List object with three elements ("Redundancy","Similarity" and "Overlap") with the corresponding matrices.
+#' @param feature Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap").
+#' @return A corrplot() object.
+#' @details This function generates a plot showing the results of the modulon target analysis of a given modulon.
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  jaccard(c('A','B','C','D','E'), c('A','B','C'))
-#'  }
+#' results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
+#' target.analysis.modulon.plot(data=results.target.analysis.modulon,feature = 'Redundancy')
 #' }
-#' @rdname ttt
-#' @export 
-ttt = function(dat,feature='Redundancy',color = 'YlGn'){
-  feature.df = dat[[feature]]
+#' }
+#' @rdname target.analysis.modulon.plot
+#' @export
+target.analysis.modulon.plot = function(data,feature='Redundancy',color = 'YlGn'){
+  feature.df = data[[feature]]
   if(feature == 'Redundancy'){color = 'YlGn'}
   if(feature == 'Similarity'){color = 'Purples'}
   if(feature == 'Overlap'){color = 'YlOrBr'}
