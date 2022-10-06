@@ -1,9 +1,34 @@
 suppressMessages(require(igraph))
 
+
+#' @title caca
+#' @description Calculate Jaccard distance between two vectors.
+#' @param a A vector.
+#' @param b A vector.
+#' @return Jaccard distance calculated as the ratio between the intersection and the union of the two vectors.
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  jaccard(c('A','B','C','D','E'), c('A','B','C'))
+#'  }
+#' }
+#' @rdname ttt
+#' @export 
+ttt = function(dat,feature='Redundancy',color = 'YlGn'){
+  feature.df = dat[[feature]]
+  if(feature == 'Redundancy'){color = 'YlGn'}
+  if(feature == 'Similarity'){color = 'Purples'}
+  if(feature == 'Overlap'){color = 'YlOrBr'}
+  return(corrplot(feature.df, type = 'lower',method = 'pie' , order = 'alphabet', tl.col = 'black',cl.ratio = 0.2, tl.srt = 45, col = COL1(color, 10),is.corr = F,title = paste("\n\n\n",'Modulon ',feature,sep = ""),tl.cex=0.75))
+}
+
+
+
+
 #' @title Jaccard Distance
 #' @description Calculate Jaccard distance between two vectors.
 #' @param a A vector.
-#' #' @param a A vector.
 #' @param b A vector.
 #' @return Jaccard distance calculated as the ratio between the intersection and the union of the two vectors.
 #' @details DETAILS
@@ -885,18 +910,6 @@ Modulon.corrplot = function(net,mod,cc,regulatory.core,feature='Redundancy',RegA
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #' @title Modulon target analysis: similarity, redundancy and overlap
 #' @description Generate the matrix with all pair-wise comparisons within a given modulon for each of the following features:"Redundancy","Similarity" and "Overlap".
 #' @param net List R object with as many elements as the modulon connected components provided as the input. Each element of the list contains a character vector with satellite transcription factors.
@@ -969,28 +982,3 @@ target.analysis.modulon = function(net,mod,mod.query){
   
   return(feature.df.list)
 }
-
-
-#' @title Plot results of the modulon target analysis
-#' @description Generate the plot for the matrix with all pair-wise comparisons within a given modulon for one of the following features:"Redundancy","Similarity" and "Overlap".
-#' @param data List object with three elements ("Redundancy","Similarity" and "Overlap") with the corresponding matrices.
-#' @param feature Target analysis feature to be displayed; one of c("Redundancy","Similarity","Overlap").
-#' @return A corrplot() object.
-#' @details This function generates a plot showing the results of the modulon target analysis of a given modulon.
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#' results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
-#' plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
-#' }
-#' }
-#' @rdname plot.target.analysis.modulon
-#' @export
-plot.target.analysis.modulon = function(data,feature='Redundancy'){
-  library(corrplot)
-  feature.df = data[[feature]]
-  if(feature == 'Redundancy'){color = 'YlGn'}
-  if(feature == 'Similarity'){color = 'Purples'}
-  if(feature == 'Overlap'){color = 'YlOrBr'}
-  return(corrplot(feature.df, type = 'lower',method = 'pie' , order = 'alphabet', tl.col = 'black',cl.ratio = 0.2, tl.srt = 45, col = COL1(color, 10),is.corr = F,title = paste("\n\n\n",'Modulon ',feature,sep = ""),tl.cex=0.75))
-}  

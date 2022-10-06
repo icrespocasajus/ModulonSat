@@ -7,8 +7,7 @@
 jaccard(a, b)
 }
 \arguments{
-\item{a}{A vector.
-#' @param a A vector.}
+\item{a}{A vector.}
 
 \item{b}{A vector.}
 }
