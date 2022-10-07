@@ -27,7 +27,7 @@ This function remove satellite transcription factors with low discriminant power
 \examples{
 \dontrun{
 if(interactive()){
-target.analysis.manual.query(net = network.TILs,
+target.analysis.modulon.wrt.cc.manual.query(net = network.TILs,
 mod = modulons.TILs,
 cc = cc.TILs,
 query.mod = '3',

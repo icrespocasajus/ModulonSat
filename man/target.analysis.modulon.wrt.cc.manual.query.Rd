@@ -8,8 +8,8 @@ target.analysis.modulon.wrt.cc.manual.query(
   net,
   modulon,
   cc,
-  query.mod,
-  query.cc
+  mod.query,
+  cc.query
 )
 }
 \arguments{
@@ -17,11 +17,11 @@ target.analysis.modulon.wrt.cc.manual.query(
 
 \item{cc}{Connected components generated with find.connected.components() or regulatory cores as the output of core()}
 
+\item{modulons}{A list with as many elements as modulons/clusters containing the constituent elements.}
+
 \item{query.mod}{Name of the query modulon}
 
 \item{query.cc}{Name of the connected component}
-
-\item{modulons}{A list with as many elements as modulons/clusters containing the constituent elements.}
 }
 \value{
 List with as many elements as the modulon constituent elements out of a given modulon connected component. Each element includes a dataframe with 4 columns: TF, Redundancy, Similarity and Overlap

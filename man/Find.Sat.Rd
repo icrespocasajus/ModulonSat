@@ -25,7 +25,7 @@ This function collects the modulon constituent elements sharing targets with a g
 \examples{
 \dontrun{
 if(interactive()){
-target.analysis.manual.query(net = network.TILs,
+target.analysis.modulon.wrt.cc.manual.query(net = network.TILs,
 mod = modulons.TILs,
 cc = cc.TILs,
 query.mod = '3',

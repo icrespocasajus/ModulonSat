@@ -285,7 +285,7 @@ target.analysis.manual.query = function(net,modulon,cc,query.mod,query.cc){
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#' target.analysis.manual.query(net = network.TILs,
+#' target.analysis.modulon.wrt.cc.manual.query(net = network.TILs,
 #' mod = modulons.TILs,
 #' cc = cc.TILs,
 #' query.mod = '3',
@@ -313,7 +313,7 @@ Find.Sat = function(data,feature = 'Redundancy',threshold = 0,quant.prob = NULL)
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#' target.analysis.manual.query(net = network.TILs,
+#' target.analysis.modulon.wrt.cc.manual.query(net = network.TILs,
 #' mod = modulons.TILs,
 #' cc = cc.TILs,
 #' query.mod = '3',
@@ -1089,12 +1089,12 @@ target.analysis.modulon.wrt.cc = function(net,modulons,cc){
 #' }
 #' @rdname target.analysis.modulon.wrt.cc.manual.query
 #' @export 
-target.analysis.modulon.wrt.cc.manual.query = function(net,modulon,cc,query.mod,query.cc){
+target.analysis.modulon.wrt.cc.manual.query = function(net,modulon,cc,mod.query,cc.query){
   network = net
   modulons = modulon
   cc = cc
-  modulon.tmp = query.mod
-  core.tmp = cc[[modulon.tmp]][[query.cc]]
+  modulon.tmp = mod.query
+  core.tmp = cc[[modulon.tmp]][[cc.query]]
   
   regulons = split(network$Target,network$Source)
   core.targets.tmp = as.character(unlist(regulons[core.tmp]))
