@@ -5,10 +5,10 @@ library(ggplot2)
 # Modulon target analysis
 mod.query = '3'
 results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = mod.query)
-plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
+target.analysis.modulon.plot(data=results.target.analysis.modulon,feature = 'Redundancy')
 
 pdf(file=paste('./Modulon',mod.query,feature,'.pdf',sep = "_"),height = 12,width = 12)
-plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
+target.analysis.modulon.plot(data=results.target.analysis.modulon,feature = 'Redundancy')
 dev.off()
 
 
@@ -19,7 +19,7 @@ satellites = Find.Sat(results.target.analysis.modulon.wrt.cc,feature = 'Redundan
 satellites.filtered = Filter.Sat(sat.data=satellites,DA.data = DA.TILs,DA=c("Any"),top.percent = 10)
  HERE!!!!!!!
 
-
+summary(results.target.analysis.modulon.wrt.cc)
 
 # Modulon target analysis wrt connected components
 plots = Modulon.heatmap(

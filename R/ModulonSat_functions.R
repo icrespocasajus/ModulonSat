@@ -979,3 +979,156 @@ target.analysis.modulon.plot = function(data,feature='Redundancy',color = 'YlGn'
   if(feature == 'Overlap'){color = 'YlOrBr'}
   return(corrplot(feature.df, type = 'lower',method = 'pie' , order = 'alphabet', tl.col = 'black',cl.ratio = 0.2, tl.srt = 45, col = COL1(color, 10),is.corr = F,title = paste("\n\n\n",'Modulon ',feature,sep = ""),tl.cex=0.75))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#' @title Target Analysis wrt modulon connected components
+#' @description Find common targets between a given modulon connected component and modulon constituent elements out of the connected component.
+#' @param net A dataframe with a network encoded in 3 columns: 'Source','Interaction','Target'.
+#' @param modulons A list with as many elements as modulons/clusters containing the constituent elements.
+#' @param cc Connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @return List of the modulon constituent elements sharing targets with a given modulon connected component.
+#' @details This function is searches for the modulon constituent elements sharing targets with a given modulon connected component, for each connected component and modulon in a given list of connected components split by their source modulon.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis.modulon.wrt.cc(net = network.TILs,
+#' mod = modulons.TILs,
+#' cc = cc.TILs
+#' )
+#' }
+#' }
+#' @rdname target.analysis.modulon.wrt.cc
+#' @export 
+target.analysis.modulon.wrt.cc = function(net,modulons,cc){
+  network = net
+  modulons = modulons
+  cc = cc
+  regulons = split(network$Target,network$Source)
+  target.analysis.results = list()
+  for(i in 1:length(names(cc))){
+    modulon.tmp = names(cc)[i]
+    for(j in 1:length(names(cc[[modulon.tmp]]))){
+      query.cc = names(cc[[modulon.tmp]])[j]
+      core.tmp = cc[[modulon.tmp]][[query.cc]]
+      
+      core.targets.tmp = as.character(unlist(regulons[core.tmp]))
+      regulons.subset.core = regulons[core.tmp]
+      regulons.subset.no.core = regulons[setdiff(modulons[[modulon.tmp]],core.tmp)]
+      
+      no.core.redundancy.wrt.core = lapply(regulons.subset.no.core,function(x){
+        tf.targets.tmp = as.character(unlist(x))
+        redundancy.tmp = redundancy.wrt(tf.targets.tmp,core.targets.tmp)
+        return(redundancy.tmp)
+      })
+      no.core.redundancy.df = data.frame(TF=names(as.data.frame(no.core.redundancy.wrt.core)),Redundancy = as.numeric(as.character(as.data.frame(no.core.redundancy.wrt.core))))
+      rownames(no.core.redundancy.df)=no.core.redundancy.df$TF
+      no.core.redundancy.df = no.core.redundancy.df[order(no.core.redundancy.df$Redundancy,decreasing = T),]
+      
+      no.core.similarity.wrt.core = lapply(regulons.subset.no.core,function(x){
+        tf.targets.tmp = as.character(unlist(x))
+        redundancy.tmp = jaccard(tf.targets.tmp,core.targets.tmp)
+        return(redundancy.tmp)
+      })
+      no.core.similarity.df = data.frame(TF=names(as.data.frame(no.core.similarity.wrt.core)),Similarity = as.numeric(as.character(as.data.frame(no.core.similarity.wrt.core))))
+      rownames(no.core.similarity.df)=no.core.similarity.df$TF
+      no.core.similarity.df = no.core.similarity.df[order(no.core.similarity.df$Similarity,decreasing = T),]
+      
+      no.core.overlap.wrt.core = lapply(regulons.subset.no.core,function(x){
+        tf.targets.tmp = as.character(unlist(x))
+        overlap.tmp = overlap(tf.targets.tmp,core.targets.tmp)
+        return(overlap.tmp)
+      })
+      no.core.overlap.df = data.frame(TF=names(as.data.frame(no.core.overlap.wrt.core)),Overlap = as.numeric(as.character(as.data.frame(no.core.overlap.wrt.core))))
+      rownames(no.core.overlap.df)=no.core.overlap.df$TF
+      no.core.overlap.df = no.core.overlap.df[order(no.core.overlap.df$Overlap,decreasing = T),]
+      
+      target.analysis.results[[paste(modulon.tmp,query.cc,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
+      
+    }  
+    
+  }
+  return(target.analysis.results)
+}
+
+
+
+#' @title Target Analysis with respect to modulon connected components: manual query
+#' @description Find common targets between a given modulon connected component and modulon constituent elements out of the connected component; the specific modulon and connected component have to be specified.
+#' @param net A dataframe with a network encoded in 3 columns: 'Source','Interaction','Target'.
+#' @param modulons A list with as many elements as modulons/clusters containing the constituent elements.
+#' @param cc Connected components generated with find.connected.components() or regulatory cores as the output of core()
+#' @param query.mod Name of the query modulon
+#' @param query.cc Name of the connected component
+#' @return List with as many elements as the modulon constituent elements out of a given modulon connected component. Each element includes a dataframe with 4 columns: TF, Redundancy, Similarity and Overlap
+#' @details This function is searches for the modulon constituent elements sharing targets with a given modulon connected component.
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#' target.analysis.modulon.wrt.cc.manual.query(net = network.TILs,
+#' mod = modulons.TILs,
+#' cc = cc.TILs,
+#' query.mod = '3',
+#' query.cc= 'cc.3')
+#' }
+#' }
+#' @rdname target.analysis.modulon.wrt.cc.manual.query
+#' @export 
+target.analysis.modulon.wrt.cc.manual.query = function(net,modulon,cc,query.mod,query.cc){
+  network = net
+  modulons = modulon
+  cc = cc
+  modulon.tmp = query.mod
+  core.tmp = cc[[modulon.tmp]][[query.cc]]
+  
+  regulons = split(network$Target,network$Source)
+  core.targets.tmp = as.character(unlist(regulons[core.tmp]))
+  regulons.subset.core = regulons[core.tmp]
+  regulons.subset.no.core = regulons[setdiff(modulons[[modulon.tmp]],core.tmp)]
+  
+  no.core.redundancy.wrt.core = lapply(regulons.subset.no.core,function(x){
+    tf.targets.tmp = as.character(unlist(x))
+    redundancy.tmp = redundancy.wrt(tf.targets.tmp,core.targets.tmp)
+    return(redundancy.tmp)
+  })
+  no.core.redundancy.df = data.frame(TF=names(as.data.frame(no.core.redundancy.wrt.core)),Redundancy = as.numeric(as.character(as.data.frame(no.core.redundancy.wrt.core))))
+  rownames(no.core.redundancy.df)=no.core.redundancy.df$TF
+  no.core.redundancy.df = no.core.redundancy.df[order(no.core.redundancy.df$Redundancy,decreasing = T),]
+  
+  no.core.similarity.wrt.core = lapply(regulons.subset.no.core,function(x){
+    tf.targets.tmp = as.character(unlist(x))
+    redundancy.tmp = jaccard(tf.targets.tmp,core.targets.tmp)
+    return(redundancy.tmp)
+  })
+  no.core.similarity.df = data.frame(TF=names(as.data.frame(no.core.similarity.wrt.core)),Similarity = as.numeric(as.character(as.data.frame(no.core.similarity.wrt.core))))
+  rownames(no.core.similarity.df)=no.core.similarity.df$TF
+  no.core.similarity.df = no.core.similarity.df[order(no.core.similarity.df$Similarity,decreasing = T),]
+  
+  no.core.overlap.wrt.core = lapply(regulons.subset.no.core,function(x){
+    tf.targets.tmp = as.character(unlist(x))
+    overlap.tmp = overlap(tf.targets.tmp,core.targets.tmp)
+    return(overlap.tmp)
+  })
+  no.core.overlap.df = data.frame(TF=names(as.data.frame(no.core.overlap.wrt.core)),Overlap = as.numeric(as.character(as.data.frame(no.core.overlap.wrt.core))))
+  rownames(no.core.overlap.df)=no.core.overlap.df$TF
+  no.core.overlap.df = no.core.overlap.df[order(no.core.overlap.df$Overlap,decreasing = T),]
+  
+  target.analysis.results = list()
+  target.analysis.results[[paste(query.mod,query.cc,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
+  return(target.analysis.results)
+}
