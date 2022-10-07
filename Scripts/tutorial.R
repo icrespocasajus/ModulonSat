@@ -3,7 +3,8 @@ library(corrplot)
 library(ggplot2)
 
 # Modulon target analysis
-results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = '3')
+mod.query = '3'
+results.target.analysis.modulon=target.analysis.modulon(net=network.TILs,mod=modulons.TILs,mod.query = mod.query)
 plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Redundancy')
 
 pdf(file=paste('./Modulon',mod.query,feature,'.pdf',sep = "_"),height = 12,width = 12)
@@ -11,9 +12,12 @@ plot.target.analysis.modulon(data=results.target.analysis.modulon,feature = 'Red
 dev.off()
 
 
+# Modulon target analysis wrt cc
 
-
-
+results.target.analysis.modulon.wrt.cc = target.analysis(net = network.TILs,mod = modulons.TILs,cc = cc.TILs)
+satellites = Find.Sat(results.target.analysis.modulon.wrt.cc,feature = 'Redundancy',threshold = 0)
+satellites.filtered = Filter.Sat(sat.data=satellites,DA.data = DA.TILs,DA=c("Any"),top.percent = 10)
+ HERE!!!!!!!
 
 
 
