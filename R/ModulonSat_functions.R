@@ -1129,6 +1129,6 @@ target.analysis.modulon.wrt.cc.manual.query = function(net,modulon,cc,mod.query,
   no.core.overlap.df = no.core.overlap.df[order(no.core.overlap.df$Overlap,decreasing = T),]
   
   target.analysis.results = list()
-  target.analysis.results[[paste(query.mod,query.cc,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
+  target.analysis.results[[paste(modulon.tmp,cc.query,sep = '__')]]=list(Redundancy=no.core.redundancy.df,Similarity = no.core.similarity.df,Overlap=no.core.overlap.df)
   return(target.analysis.results)
 }
